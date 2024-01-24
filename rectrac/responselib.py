@@ -8,9 +8,15 @@ class Response_Login(BaseModel):
 
 class Response_Logout(BaseModel):
     success: bool
-    sessionId: str
+    httpStatus: int
+    sessionID: str
 
 class Response_SearchTable(BaseModel):
     success: bool
     sessionID: str
     records: List[Dict[str,Any]]
+
+class Response_GetFields(BaseModel):
+    success: bool
+    sessionID: str
+    fields: List[Dict[str,Any]]

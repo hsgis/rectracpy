@@ -1,45 +1,60 @@
 from pydantic import BaseModel, field_validator
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
+
+from datetime import datetime
 
 class Request_OpenSession(BaseModel):
     APIKey: str
     username: str
 
-class Request_CloseSession(BaseModel):
-    SessionID: str
-
-class Request_GetTables(BaseModel):
-    SessionID: str
-
 class Request_Table(BaseModel):
     SessionID: str
     Fields: str =  "*"
     Count: int = 10
-    Filters: Optional[Dict[str, str]] = None
+    Filters: List[Dict[str, Union[datetime, str]]]
 
-    # @field_validator("Filters")
-    # def check_filter(cls, val):
-    #     if val:
-    #         validFilterByValues = ["eq", "ne", "begins", "lt", "le", "gt", "ge", "contains"]
-    #         verificationFilterValues = "_".join(validFilterByValues)
-    #         for filter in val:
-    #             for k, v in filter.items():
-    #                 keySections = k.split("_")
-    #                 keyLength = len(keySections)
-    #                 if keyLength < 3 or keyLength > 3 or keySections[-1] not in ["filter", "filterby"]:
-    #                     raise Exception("Filter keys not formatted correctly.")
-    #                 elif keySections[-1] == "filterby" and not v in verificationFilterValues:
-    #                         raise Exception("Filter values not formateed correctly")
-    #                 elif keySections[-1] == "filter" and v in verificationFilterValues:
-    #                         raise Exception("Filter values not formateed correctly")
-    #     return val
+    @field_validator("Filters")
+    def check_filter(cls, val):
+        if val:
+            for filter in val: #list
+                for k, v in filter.items(): #dict
+                    if isinstance(v, datetime):
+                        filter[k] = datetime.strftime(v, "%m/%d/%Y %H:%M:%S.%f")
+        return val
+
+    def is_valid_filterby(self, filterby: str):
+        if filterby in ["eq", "ne", "begins", "lt", "le", "gt", "ge", "contains"]:
+            return True
+        else:
+            return False
+
+    def validate_filter(self, inDict: Dict):
+        endKeys = [i.split("_")[2] for i in inDict.keys()]
+        filterBy = [v for k,v in inDict.items() if k.endswith("filterby")]
+        if endKeys == ["filter", "filterby"] and self.is_valid_filterby(filterBy[0]):
+            return True
+        elif endKeys == ["filter"]:
+            return True
+        else:
+            return False
+
+
+    def handle_filter(self, filterValue):
+        returnDict = {}
+        for filter in filterValue:
+            isValid = self.validate_filter(filter)
+            if isValid:
+                returnDict.update(filter)
+            else:
+                raise Exception(f"Invalid filter for request: {filter}")
+        return returnDict
 
     def model_dump_table(self):
         returnDict = {}
         for key, val in self.__dict__.items():
             if key == "Filters" and val:
-                for k, v in val.items():
-                    returnDict[k] = v
+                filterDict = self.handle_filter(val)
+                returnDict.update(filterDict)
             else:
                 returnDict[key] = val
         return returnDict

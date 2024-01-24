@@ -1,13 +1,18 @@
 from pydantic import BaseModel
 import requests
 
-from .requestlib import Request_GetTables, Request_OpenSession, Request_CloseSession, Request_Table
-from .responselib import Response_Login, Response_Logout, Response_SearchTable
+from .requestlib import Request_OpenSession, Request_Table
+from .responselib import Response_Login, Response_Logout, Response_SearchTable, Response_GetFields
 
 class RecTrac(BaseModel):
     BaseHREF: str
     APIKey: str
     username: str
+
+    def requestSuccess(self, request):
+        if request.status_code != 200:
+            return False
+        return True
 
     def login(self) -> str:
         requestData = Request_OpenSession(APIKey=self.APIKey, username=self.username)
@@ -19,21 +24,32 @@ class RecTrac(BaseModel):
         response = Response_Login(**request.json())
         return response.sessionID
 
-    def endSession(self, requestData:Request_CloseSession) -> Response_Logout:
+    def endSession(self, sessionId:str) -> Response_Logout:
         endUrl = f"{self.BaseHREF}/authenticate/login"
-        request = requests.post(endUrl, json=requestData.model_dump_json())
+        request = requests.post(endUrl, data={"SessionId": sessionId})
         response = Response_Logout(**request.json())
+        if not self.requestSuccess(request):
+            raise Exception("Could not endSession: {request.text}")
         return response
 
     def searchTable(self, table:str, requestData:Request_Table) -> Response_SearchTable:
         endUrl = f"{self.BaseHREF}/search/get/{table}"
         request = requests.get(endUrl, params=requestData.model_dump_table())
-        print(requestData.model_dump())
-        print("here:", request.text)
         response = Response_SearchTable(**request.json())
+        if not self.requestSuccess(request):
+            raise Exception("Could not searchTable: {request.text}")
         return response
 
-    def getTables(self, requestData:Request_GetTables):
+    def getTables(self, sessionId:str):
         endUrl = f"{self.BaseHREF}/search/tables"
-        request = requests.get(endUrl, params=requestData.model_dump())
-        print(request.text)
+        request = requests.get(endUrl, params={"SessionId": sessionId})
+        if not self.requestSuccess(request):
+            raise Exception("Could not getTables: {request.text}")
+        return request.json()
+
+    def getFields(self, table:str, sessionId:str):
+        endUrl = f"{self.BaseHREF}/search/fields/{table}"
+        request = requests.get(endUrl, params={"SessionId": sessionId})
+        if not self.requestSuccess(request):
+            raise Exception("Could not getFields: {request.text}")
+        return Response_GetFields(**request.json())
