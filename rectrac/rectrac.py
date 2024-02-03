@@ -26,7 +26,7 @@ class RecTrac(BaseModel):
 
     def endSession(self, sessionId:str) -> Response_Logout:
         endUrl = f"{self.BaseHREF}/authenticate/login"
-        request = requests.post(endUrl, data={"SessionId": sessionId})
+        request = requests.post(endUrl, data={"SessionID": sessionId})
         response = Response_Logout(**request.json())
         if not self.requestSuccess(request):
             raise Exception("Could not endSession: {request.text}")
