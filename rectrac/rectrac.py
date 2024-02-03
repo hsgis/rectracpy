@@ -18,7 +18,6 @@ class RecTrac(BaseModel):
         requestData = Request_OpenSession(APIKey=self.APIKey, username=self.username)
         endUrl = f"{self.BaseHREF}/authenticate/login"
         request = requests.post(endUrl, data=requestData.model_dump())
-        print(request.text)
         if request.status_code != 200:
             raise Exception(f"Could not login: {request.status_code}-{request.text}")
         response = Response_Login(**request.json())
