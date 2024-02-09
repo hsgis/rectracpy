@@ -26,17 +26,17 @@ class RecTrac(BaseModel):
     def endSession(self, sessionId:str) -> Response_Logout:
         endUrl = f"{self.BaseHREF}/authenticate/login"
         request = requests.post(endUrl, data={"SessionID": sessionId})
-        response = Response_Logout(**request.json())
         if not self.requestSuccess(request):
             raise Exception("Could not endSession: {request.text}")
+        response = Response_Logout(**request.json())
         return response
 
     def searchTable(self, table:str, requestData:Request_Table) -> Response_SearchTable:
         endUrl = f"{self.BaseHREF}/search/get/{table}"
         request = requests.get(endUrl, params=requestData.model_dump_table())
-        response = Response_SearchTable(**request.json())
         if not self.requestSuccess(request):
             raise Exception("Could not searchTable: {request.text}")
+        response = Response_SearchTable(**request.json())
         return response
 
     def getTables(self, sessionId:str):
