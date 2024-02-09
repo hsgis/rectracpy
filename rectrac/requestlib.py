@@ -28,16 +28,39 @@ class Request_Table(BaseModel):
         else:
             return False
 
-    def validate_filter(self, inDict: Dict):
-        endKeys = [i.split("_")[2] for i in inDict.keys()]
-        filterBy = [v for k,v in inDict.items() if k.endswith("filterby")]
-        if endKeys == ["filter", "filterby"] and self.is_valid_filterby(filterBy[0]):
+    def is_valid_filterbys(self, filterByList:List[str]) -> bool:
+        isValidFilterBy = [self.is_valid_filterby(i) for i in filterByList]
+        if False in isValidFilterBy:
+            return False
+        else:
             return True
-        elif endKeys == ["filter"]:
+
+    def is_valid_endkey(self, endkey:str) -> bool:
+        if endkey == "filter" or endkey == "filterby":
             return True
         else:
             return False
 
+    def is_valid_endkeys(self, endKeyList:List[str]) -> bool:
+        isValidFilterBy = [self.is_valid_endkey(i) for i in endKeyList]
+        if False in isValidFilterBy:
+            return False
+        else:
+            return True
+
+
+    def validate_filter(self, inDict: Dict):
+        endKeys = [i.split("_")[2] for i in inDict.keys()]
+        filterBy = [v for k,v in inDict.items() if k.endswith("filterby")]
+        validEndKeys = self.is_valid_endkeys(endKeys)
+        validFilterBy = self.is_valid_filterbys(filterBy) if filterBy else None
+        if validEndKeys:
+            if validFilterBy == None or validFilterBy:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def handle_filter(self, filterValue):
         returnDict = {}
@@ -46,7 +69,7 @@ class Request_Table(BaseModel):
             if isValid:
                 returnDict.update(filter)
             else:
-                raise Exception(f"Invalid filter for request: {filter}")
+                raise Exception(f"Invalid filters for request: {filter}")
         return returnDict
 
     def model_dump_table(self):
