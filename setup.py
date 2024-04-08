@@ -21,7 +21,8 @@ setup(name='rectrac',
           'rectrac'
       ],
       install_requires=[
-          'pydantic'
+          'pydantic',
+          'requests'
       ],
 	  include_package_data=True,
       zip_safe=False)
