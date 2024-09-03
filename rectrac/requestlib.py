@@ -20,6 +20,8 @@ class Request_Table(BaseModel):
                 for k, v in filter.items(): #dict
                     if isinstance(v, datetime):
                         filter[k] = datetime.strftime(v, "%m/%d/%Y %H:%M:%S.%f")
+                    elif isinstance(v, bool):
+                        filter[k] = str(v).upper()
         return val
 
     def is_valid_filterby(self, filterby: str):
