@@ -13,15 +13,16 @@ class Request_Table(BaseModel):
     Count: int = 10
     Filters: List[Dict[str, Union[datetime, str]]]
 
-    @field_validator("Filters")
+    @field_validator("Filters", mode="before")
     def check_filter(cls, val):
         if val:
-            for filter in val: #list
-                for k, v in filter.items(): #dict
-                    if isinstance(v, datetime):
-                        filter[k] = datetime.strftime(v, "%m/%d/%Y %H:%M:%S.%f")
-                    elif isinstance(v, bool):
-                        filter[k] = str(v).upper()
+            # for filter in val: #list
+            for i in range(len(val)):
+                for k, v in val[i].items(): #dict
+                    if isinstance(v, bool):
+                        val[i][k] = str(v).upper()
+                    elif isinstance(v, datetime):
+                        val[i][k] = datetime.strftime(v, "%m/%d/%Y %H:%M:%S.%f")
         return val
 
     def is_valid_filterby(self, filterby: str):
